@@ -8,49 +8,47 @@
 import cv2
 import gStreamerCamera
 
-""" 
-gstreamer_pipeline returns a GStreamer pipeline for capturing from the CSI camera
-Flip the image by setting the flip_method (most common values: 0 and 2)
-display_width and display_height determine the size of each camera pane in the window on the screen
-Default 1920x1080 displayd in a 1/4 size window
-"""
-i = 0
-camNo = 1
+image_save_path = 'calibration/left_camera_data/input_images'
+#image_save_path = 'calibration/right_camera_data/input_images'
 
 def show_camera():
-    global i
 
-    window_title = "CSI Camera"
+    camera_id = 0
+    image_no = 0
+    window_title = "cam%d" % (camera_id)
 
-    # To flip the image, modify the flip_method parameter (0 and 2 are the most common)
+    camera = gStreamerCamera.CSI_Camera(camera_id, 2, 640, 480)
+    camera.open()
+    camera.start()
 
-    video_capture = gStreamerCamera.getVideoCapture(1,2)
-    if video_capture.isOpened():
+    if camera.video_capture.isOpened():
+
         try:
-            window_handle = cv2.namedWindow(window_title, cv2.WINDOW_AUTOSIZE)
             while True:
-                ret_val, frame = video_capture.read()
-                # Check to see if the user closed the window
-                # Under GTK+ (Jetson Default), WND_PROP_VISIBLE does not work correctly. Under Qt it does
-                # GTK - Substitute WND_PROP_AUTOSIZE to detect if window has been closed by user
-                if cv2.getWindowProperty(window_title, cv2.WND_PROP_AUTOSIZE) >= 0:
-                    cv2.imshow(window_title, frame)
-                else:
-                    break 
-                keyCode = cv2.waitKey(10) & 0xFF
-                # Stop the program on the ESC key or 'q'
-                if keyCode == 27 or keyCode == ord('q'):
+                _, image = camera.read()
+
+                cv2.imshow(window_title, image)
+
+                keyCode = cv2.waitKey(30) & 0xFF
+
+                if keyCode == 27:
                     break
+
                 if keyCode == ord('y'):
-                    print('image captured')
-                    cv2.imwrite('./cam_' + str(camNo) + '_calibration/'+str(i)+'.png',frame)
-                    i+=1
+
+                    print('image%d captured' % (image_no))
+
+                    cv2.imwrite(image_save_path + '/%d.png' % (image_no), image)
+
+                    image_no+=1
         finally:
-            video_capture.release()
+            camera.stop()
+            camera.release()
             cv2.destroyAllWindows()
     else:
-        print("Error: Unable to open camera")
-
+        print("Error: Unable to open both cameras")
+        camera.stop()
+        camera.release()
 
 if __name__ == "__main__":
     show_camera()

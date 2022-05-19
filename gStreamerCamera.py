@@ -54,7 +54,9 @@ class CSI_Camera:
             sensor_id=sensor_id, 
             flip_method=flip_method,
             capture_width = width,
-            capture_height = height
+            capture_height = height,
+            display_width = width,
+            display_height = height
         )
 
     def open(self):
@@ -69,7 +71,6 @@ class CSI_Camera:
             self.video_capture = None
             print("Unable to open camera")
             print("Pipeline: " + self.gstreamer_pipeline_string)
-
 
     def start(self):
         if self.running:
